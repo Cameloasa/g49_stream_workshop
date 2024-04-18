@@ -7,8 +7,12 @@ import se.lexicon.vxo.model.PersonDto;
 
 import java.time.LocalDate;
 import java.time.Period;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.ToIntFunction;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -21,6 +25,8 @@ import static org.junit.jupiter.api.Assertions.*;
 public class StreamExercise {
 
     private static List<Person> people = People.INSTANCE.getPeople();
+
+
 
     /**
      * Turn integers into a stream then use forEach as a terminal operation to print out the numbers
@@ -40,9 +46,8 @@ public class StreamExercise {
      */
     @Test
     public void task2() {
-        long amount = 0;
-
-        //TODO:Write code here
+        long amount = people.stream()//Turning people into a Stream
+                            .count();//count all members
 
         assertEquals(10000, amount);
     }
@@ -52,10 +57,14 @@ public class StreamExercise {
      */
     @Test
     public void task3() {
-        long amount = 0;
-        int expected = 90;
+        long amount = people
+                .stream()//Turning people into a Stream
+                .filter(person -> person.getLastName().equals("Andersson"))// filter people with Andersson last name
+                .count();//count all  Andersson members
 
-        //TODO:Write code here
+
+
+        int expected = 90;
 
         assertEquals(expected, amount);
     }
@@ -66,10 +75,14 @@ public class StreamExercise {
     @Test
     public void task4() {
         int expectedSize = 4988;
-        List<Person> females = null;
+        //1.Turning people into a Stream
+        //2.Filter people after gender - female
+        //3.Collect to list - Collecting elements of a stream into a List or Map.
 
-        //TODO:Write code here
-
+        List<Person> females = people
+                .stream()
+                .filter(person -> person.getGender().equals(Gender.FEMALE))
+                .collect(Collectors.toList());
 
         assertNotNull(females);
         assertEquals(expectedSize, females.size());
@@ -81,9 +94,14 @@ public class StreamExercise {
     @Test
     public void task5() {
         int expectedSize = 8882;
-        Set<LocalDate> dates = null;
 
-        //TODO:Write code here
+        //1.Turning people into a Stream
+        //2.Mapping people birthday using method reference
+        //3.Collect - Collecting elements of a stream into a List or Map.
+        Set<LocalDate> dates = people
+                .stream()
+                .map(Person::getDateOfBirth)
+                .collect(Collectors.toCollection(TreeSet ::new));
 
         assertNotNull(dates);
         assertTrue(dates instanceof TreeSet);
@@ -96,10 +114,14 @@ public class StreamExercise {
     @Test
     public void task6() {
         int expectedLength = 3;
+        //1.Turning people into a Stream
+        //2.Filter people after first name Erik
+        //3.To Array: Collects the elements of the stream into an array.
 
-        Person[] result = null;
-
-        //TODO:Write code here
+        Person[] result = people
+                .stream()
+                .filter(person -> person.getFirstName().equals("Erik"))
+                .toArray(Person[]::new);
 
         assertNotNull(result);
         assertEquals(expectedLength, result.length);
@@ -111,10 +133,14 @@ public class StreamExercise {
     @Test
     public void task7() {
         Person expected = new Person(5436, "Tea", "Håkansson", LocalDate.parse("1968-01-25"), Gender.FEMALE);
+        //1.Turning people into a Stream
+        //2.Filter people after id using ==
+        //3.Find first - Finds any or the first element of the stream.
+        Optional<Person> optional = people
+                .stream()
+                .filter(person -> person.getPersonId()==5436)
+                .findFirst();
 
-        Optional<Person> optional = null;
-
-        //TODO:Write code here
 
         assertNotNull(optional);
         assertTrue(optional.isPresent());
@@ -127,10 +153,11 @@ public class StreamExercise {
     @Test
     public void task8() {
         LocalDate expectedBirthDate = LocalDate.parse("1910-01-02");
-
-        Optional<Person> optional = null;
-
-        //TODO:Write code here
+        //1.Turning people into a Stream
+        //2.Finds the minimum or maximum element in the stream, optionally using a provided comparator
+        Optional<Person> optional = people
+                .stream()
+                .min(Comparator.comparing(Person::getDateOfBirth));
 
         assertNotNull(optional);
         assertEquals(expectedBirthDate, optional.get().getDateOfBirth());
@@ -142,11 +169,19 @@ public class StreamExercise {
     @Test
     public void task9() {
         int expectedSize = 892;
+
+        //1.Turning people into a Stream
+        //2.Filtering person before date -lambda
+        //3.Mapping people birthday using Predicate and lambda expression
+        //4.Collect - Collecting elements of a stream into a List or Map.
+
         LocalDate date = LocalDate.parse("1920-01-01");
 
-        List<PersonDto> dtoList = null;
-
-        //TODO:Write code here
+        List<PersonDto> dtoList = people
+                .stream()
+                .filter(person -> person.getDateOfBirth().isBefore(date))
+                .map(person -> new PersonDto(person.getPersonId(),person.getLastName()))
+                .collect(Collectors.toList());
 
         assertNotNull(dtoList);
         assertEquals(expectedSize, dtoList.size());
@@ -160,10 +195,20 @@ public class StreamExercise {
     public void task10() {
         String expected = "WEDNESDAY 19 DECEMBER 2012";
         int personId = 5914;
+        //1.Turning people into a Stream
+        //2.Filtering person id 5914
+        //3. Map the person and format the date the birthdate
+        //4.build a string from data that the date contains the
+        Optional<String> optional = people
+                .stream()
+                .filter(person -> person.getPersonId()==5914)
+                        .map(person -> {
+                            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE dd MMMM yyyy", Locale.ENGLISH);
+                            return person.getDateOfBirth().format(formatter).toUpperCase();
+                        })
+                                .findFirst();
 
-        Optional<String> optional = null;
 
-        //TODO:Write code here
 
         assertNotNull(optional);
         assertTrue(optional.isPresent());
@@ -179,9 +224,15 @@ public class StreamExercise {
         ToIntFunction<Person> personToAge =
                 person -> Period.between(person.getDateOfBirth(), LocalDate.parse("2019-12-20")).getYears();
         double expected = 54.42;
-        double averageAge = 0;
-
-        //TODO:Write code here
+        //stream()
+        //mapToInt(personToAge)
+        //.average()
+        //.orElse(
+        double averageAge = people
+                .stream()
+                .mapToInt(personToAge)
+                .average()
+                .orElse(0.0);
 
         assertTrue(averageAge > 0);
         assertEquals(expected, averageAge, .01);
@@ -193,10 +244,17 @@ public class StreamExercise {
     @Test
     public void task12() {
         String[] expected = {"Ada", "Ana", "Anna", "Ava", "Aya", "Bob", "Ebbe", "Efe", "Eje", "Elle", "Hannah", "Maram", "Natan", "Otto"};
+        // map -Extract from people
+        //  filter and string builder a sorted string array of all firstNames
+        // that are palindromes.
+        // distinct and sort  to array No duplicates
+        String[] result = people.stream()
+                .map(Person::getFirstName)
+                .filter(firstName -> new StringBuilder(firstName).reverse().toString().equalsIgnoreCase(firstName))
+                .distinct()
+                .sorted()
+                .toArray(String[]::new);
 
-        String[] result = null;
-
-        //TODO:Write code here
 
         assertNotNull(result);
         assertArrayEquals(expected, result);
@@ -208,9 +266,13 @@ public class StreamExercise {
     @Test
     public void task13() {
         int expectedSize = 107;
-        Map<String, List<Person>> personMap = null;
+        //Extract from people
+        // a map where each
+        // key is a last name with a
+        // value containing a list of all that has that lastName
 
-        //TODO:Write code here
+        Map<String, List<Person>> personMap = people.stream()
+                .collect(Collectors.groupingBy(Person::getLastName));
 
         assertNotNull(personMap);
         assertEquals(expectedSize, personMap.size());
@@ -221,10 +283,15 @@ public class StreamExercise {
      */
     @Test
     public void task14() {
+
         LocalDate[] _2020_dates = null;
+        LocalDate start = LocalDate.of(2020, 1, 1);
+        LocalDate end = LocalDate.of(2020, 12, 31);
+        // long numOfDaysBetween = ChronoUnit.DAYS.between(start, end) + 1;
 
-        //TODO:Write code here
-
+        _2020_dates = Stream.iterate(start, date -> date.plusDays(1))
+                .limit(ChronoUnit.DAYS.between(start, end) + 1)
+                .toArray(LocalDate[]::new);
 
         assertNotNull(_2020_dates);
         assertEquals(366, _2020_dates.length);
